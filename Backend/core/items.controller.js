@@ -2,7 +2,7 @@ const pool = require('../../database/pg.database');
 
 // POST /item  (butuh auth) — buat lelang baru
 const createItem = async (req, res) => {
-  const { item_name, total_item, base_price, item_information, end_time } = req.body;
+  const { item_name, total_item, base_price, item_information, end_time, category } = req.body;
   const item_picture_url = req.file ? req.file.path : null;
 
   if (!item_name || !base_price || !end_time || !item_picture_url) {
@@ -19,9 +19,9 @@ const createItem = async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO items
-         (seller_id, item_name, total_item, base_price, item_information, item_picture_url, end_time)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
+        (seller_id, item_name, total_item, base_price, item_information, item_picture_url, end_time, category)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
       [
         req.user.id,
         item_name,
@@ -30,6 +30,7 @@ const createItem = async (req, res) => {
         item_information || null,
         item_picture_url,
         end_time,
+        category || null,
       ]
     );
 
@@ -251,4 +252,51 @@ const closeExpiredAuctions = async () => {
   }
 };
 
-module.exports = { createItem, getAllItems, getActiveItems, getItemById, getMyItems, closeExpiredAuctions };
+// GET /item/search — search dan filter items aktif
+const getFilteredItems = async (req, res) => {
+  const { search, category } = req.query;
+
+  try {
+    const conditions = [`i.status = 'active'`, `i.end_time > NOW()`];
+    const values = [];
+    let idx = 1;
+
+    if (search) {
+      conditions.push(`(i.item_name ILIKE $${idx} OR i.item_information ILIKE $${idx})`);
+      values.push(`%${search}%`);
+      idx++;
+    }
+
+    if (category) {
+      conditions.push(`i.category ILIKE $${idx}`);
+      values.push(category);
+      idx++;
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    const result = await pool.query(
+      `SELECT
+         i.*,
+         u.username AS seller_username,
+         u.profile_picture_url AS seller_picture,
+         COALESCE(
+           (SELECT MAX(b.price) FROM bid b WHERE b.item_id = i.item_id),
+           i.base_price
+         ) AS current_price,
+         (SELECT COUNT(*) FROM bid b WHERE b.item_id = i.item_id) AS bid_count
+       FROM items i
+       JOIN users u ON u.id = i.seller_id
+       WHERE ${whereClause}
+       ORDER BY i.end_time ASC`,
+      values
+    );
+
+    return res.status(200).json({ items: result.rows });
+  } catch (err) {
+    console.error('getFilteredItems error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { createItem, getAllItems, getActiveItems, getItemById, getMyItems, closeExpiredAuctions, getFilteredItems };

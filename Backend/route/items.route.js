@@ -6,6 +6,7 @@ const {
   getActiveItems,
   getItemById,
   getMyItems,
+  getFilteredItems,
 } = require('./items.controller');
 const authMiddleware = require('../../middleware/auth.middleware');
 const { uploadImage } = require('../../utils/cloudinary');
@@ -13,6 +14,7 @@ const { uploadImage } = require('../../utils/cloudinary');
 // Public
 router.get('/', getAllItems);
 router.get('/active', getActiveItems);
+router.get('/search', getFilteredItems);
 router.get('/:item_id', getItemById);
 
 // Protected
