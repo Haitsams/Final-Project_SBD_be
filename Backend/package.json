@@ -1,0 +1,24 @@
+{
+  "name": "finpro-sbd",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Falling-Apart/Finpro-SBD#readme",
+  "bugs": {
+    "url": "https://github.com/Falling-Apart/Finpro-SBD/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Falling-Apart/Finpro-SBD.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "run"
+  },
+  "dependencies": {
+    "cloudinary": "^2.10.0",
+    "express": "^5.2.1"
+  }
+}
